@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ระบบจัดการแข่งขัน ROBOT MLS</title>
+    <!-- Google Font: Sarabun -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Sarabun', 'sans-serif'] },
+                    colors: {
+                        navy: { 50: '#f0f4f8', 100: '#d9e2ec', 500: '#102a43', 700: '#0b1b2b', 900: '#030c16' },
+                        brand: { blue: '#1e40af', light: '#3b82f6', accent: '#60a5fa', bg: '#f8fafc' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; color: #1e293b; -webkit-tap-highlight-color: transparent; }
+        .glass-card { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(12px); border: 1px solid rgba(226, 232, 240, 0.9); }
+        .step-active { background-color: #1e40af; color: white; }
+        .step-done { background-color: #3b82f6; color: white; }
+        .step-inactive { background-color: #e2e8f0; color: #64748b; }
+        
+        @keyframes spinLogo {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(180deg); }
+            100% { transform: rotateY(360deg); }
+        }
+        .logo-spin {
+            animation: spinLogo 8s infinite linear;
+            transform-style: preserve-3d;
+        }
+
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .print-container { width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header Section -->
+    <header class="bg-gradient-to-r from-navy-900 via-navy-700 to-brand-blue text-white shadow-xl no-print border-b-4 border-blue-400">
+        <div class="max-w-[95%] xl:max-w-[90%] mx-auto py-3 px-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white p-2 rounded-xl shadow-lg border-2 border-blue-300">
+                        <img src="https://img2.imgbiz.com/imgbiz/-304f5817f4946b337.png" alt="School Logo" class="h-10 sm:h-14 w-auto object-contain logo-spin" onerror="this.src='https://via.placeholder.com/60?text=LOGO'">
+                    </div>
+                    <div>
+                        <span class="bg-blue-500 text-white text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold tracking-wide uppercase">Official Tournament Manager</span>
+                        <h1 class="text-xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                            ROBOT MLS <span class="text-blue-300 text-xs sm:text-lg font-normal hidden xs:inline">| ระบบจัดการแข่งขันหุ่นยนต์ระดับโปร</span>
+                        </h1>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button onclick="toggleTimerModal()" class="flex-1 sm:flex-none bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-2 rounded-xl transition shadow-lg flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+                    <i class="fa-solid fa-stopwatch text-base"></i> นาฬิกาสนาม
+                </button>
+                <button onclick="resetApp()" class="flex-1 sm:flex-none bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white px-3 py-2 rounded-xl transition border border-red-400/30 flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+                    <i class="fa-solid fa-rotate"></i> เริ่มใหม่
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-[95%] xl:max-w-[90%] mx-auto py-4 sm:py-8 flex-grow w-full">
+        
+        <!-- Wizard Navigation Steps -->
+        <div class="no-print mb-6 sm:mb-8 overflow-x-auto py-2">
+            <div class="flex items-center justify-between min-w-[320px] max-w-4xl mx-auto relative px-2">
+                <div class="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-gray-200 -z-10"></div>
+                <div id="line-progress" class="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-brand-blue -z-10 transition-all duration-300" style="width: 0%;"></div>
+
+                <div class="flex flex-col items-center cursor-pointer" onclick="goToStep(1)">
+                    <div id="step-btn-1" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-lg shadow-md transition-all step-active">1</div>
+                    <span class="text-[10px] sm:text-xs font-semibold mt-1.5 text-slate-700">1. ตั้งค่า</span>
+                </div>
+                <div class="flex flex-col items-center cursor-pointer" onclick="goToStep(2)">
+                    <div id="step-btn-2" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-lg shadow-md transition-all step-inactive">2</div>
+                    <span class="text-[10px] sm:text-xs font-semibold mt-1.5 text-slate-700">2. รอบสาย 1</span>
+                </div>
+                <div class="flex flex-col items-center cursor-pointer" onclick="goToStep(3)">
+                    <div id="step-btn-3" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-lg shadow-md transition-all step-inactive">3</div>
+                    <span class="text-[10px] sm:text-xs font-semibold mt-1.5 text-slate-700">3. รอบสาย 2 & 4ทีม</span>
+                </div>
+                <div class="flex flex-col items-center cursor-pointer" onclick="goToStep(4)">
+                    <div id="step-btn-4" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-lg shadow-md transition-all step-inactive">4</div>
+                    <span class="text-[10px] sm:text-xs font-semibold mt-1.5 text-slate-700">4. สรุปผล</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 1: CONFIGURATION & SETUP -->
+        <section id="step-1" class="space-y-6">
+            <div class="glass-card rounded-2xl sm:rounded-3xl p-4 sm:p-10 shadow-xl max-w-5xl mx-auto border border-slate-100">
+                <h2 class="text-xl sm:text-2xl font-bold text-navy-700 border-b pb-3 sm:pb-4 mb-4 sm:mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-brand-light"></i> 1. เลือกรูปแบบการแข่งขัน
+                </h2>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                    <label class="relative flex flex-col p-4 sm:p-6 bg-white rounded-xl sm:rounded-2xl border-2 cursor-pointer hover:border-brand-light transition duration-200 shadow-sm group">
+                        <input type="radio" name="format" value="group" class="sr-only peer" checked onchange="toggleFormatOptions()">
+                        <div class="flex items-center justify-between mb-2 sm:mb-3">
+                            <i class="fa-solid fa-sitemap text-2xl sm:text-3xl text-slate-400 peer-checked:text-brand-blue group-hover:text-brand-blue"></i>
+                        </div>
+                        <span class="font-bold text-slate-800 text-base sm:text-xl mb-1">แบบแบ่งสาย (2 รอบ + ชิง 1,2,3)</span>
+                        <span class="text-xs sm:text-sm text-slate-500">รอบแรกแบ่งสายเอาอันดับ 1-2 มาแบ่งสายใหม่รอบสอง คัดเหลือ 4 ทีมสุดท้าย ชิงชนะเลิศและชิงที่ 3</span>
+                    </label>
+
+                    <label class="relative flex flex-col p-4 sm:p-6 bg-white rounded-xl sm:rounded-2xl border-2 cursor-pointer hover:border-brand-light transition duration-200 shadow-sm group">
+                        <input type="radio" name="format" value="roundrobin" class="sr-only peer" onchange="toggleFormatOptions()">
+                        <div class="flex items-center justify-between mb-2 sm:mb-3">
+                            <i class="fa-solid fa-arrows-spin text-2xl sm:text-3xl text-slate-400 peer-checked:text-brand-blue group-hover:text-brand-blue"></i>
+                        </div>
+                        <span class="font-bold text-slate-800 text-base sm:text-xl mb-1">แบบพบกันหมด (Round Robin)</span>
+                        <span class="text-xs sm:text-sm text-slate-500">ทุกทีมลงแข่งขันเจอกันหมด นำคะแนนรวมมาจัดอันดับ 1-3 ทันที</span>
+                    </label>
+                </div>
+
+                <div id="group-stage-options" class="bg-blue-50/70 p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-blue-100 mb-6 sm:mb-8">
+                    <label class="block font-semibold text-slate-700 text-sm sm:text-base mb-2 sm:mb-3">จำนวนสายรอบแรกที่ต้องการแบ่ง:</label>
+                    <div class="grid grid-cols-3 gap-2 sm:gap-4">
+                        <button type="button" onclick="setGroupCount(2)" id="btn-group-2" class="group-cnt-btn py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold border transition text-center bg-brand-blue text-white border-brand-blue shadow text-xs sm:text-sm">2 สาย (A, B)</button>
+                        <button type="button" onclick="setGroupCount(4)" id="btn-group-4" class="group-cnt-btn py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold border transition text-center bg-white text-slate-700 border-slate-300 hover:bg-slate-50 text-xs sm:text-sm">4 สาย (A-D)</button>
+                        <button type="button" onclick="setGroupCount(8)" id="btn-group-8" class="group-cnt-btn py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold border transition text-center bg-white text-slate-700 border-slate-300 hover:bg-slate-50 text-xs sm:text-sm">8 สาย (A-H)</button>
+                    </div>
+                </div>
+
+                <!-- CSV / Excel Batch Import Toolbar -->
+                <div class="bg-slate-100/80 p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 mb-6 sm:mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2">
+                            <i class="fa-solid fa-file-excel text-emerald-600 text-xl"></i> นำเข้าชื่อทีมผ่านไฟล์ CSV / Excel
+                        </h3>
+                        <p class="text-[11px] sm:text-xs text-slate-500 mt-1">อัปโหลดไฟล์ .csv (คอลัมน์แรกคือชื่อทีม) เพื่อกรอกชื่อทีมอัตโนมัติ</p>
+                    </div>
+                    <label class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl shadow transition cursor-pointer flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap">
+                        <i class="fa-solid fa-upload"></i> เลือกไฟล์ CSV
+                        <input type="file" accept=".csv, .txt" onchange="handleCSVImport(event)" class="hidden">
+                    </label>
+                </div>
+
+                <div class="mb-6 sm:mb-8">
+                    <label class="block font-semibold text-slate-700 text-sm sm:text-base mb-2 sm:mb-3">จำนวนทีมเข้าแข่งขันทั้งหมด:</label>
+                    <div class="flex items-center gap-3">
+                        <input type="number" id="team-count" min="4" max="64" value="8" onchange="generateTeamInputs()" class="w-28 sm:w-36 p-3 border-2 border-slate-200 rounded-xl font-bold text-center text-xl sm:text-2xl text-brand-blue focus:border-brand-blue focus:outline-none shadow-sm">
+                        <button onclick="generateTeamInputs()" class="flex-grow sm:flex-grow-0 bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 sm:px-6 py-3.5 rounded-xl transition shadow flex items-center justify-center gap-2 text-xs sm:text-sm">
+                            <i class="fa-solid fa-list-check"></i> สร้างช่องกรอกชื่อ
+                        </button>
+                    </div>
+                </div>
+
+                <div id="team-inputs-container" class="space-y-4 sm:space-y-6 border-t pt-6 sm:pt-8">
+                    <h3 class="font-bold text-slate-800 text-base sm:text-lg">กรอกชื่อทีมแข่งขัน:</h3>
+                    <div id="team-inputs-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 max-h-[350px] overflow-y-auto p-1"></div>
+                    
+                    <button onclick="startTournament()" class="w-full mt-4 sm:mt-6 bg-gradient-to-r from-brand-blue to-blue-600 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3.5 sm:py-4 rounded-xl sm:rounded-2xl shadow-xl transition duration-200 text-base sm:text-xl flex items-center justify-center gap-3">
+                        สร้างตารางการแข่งขันรอบแรก <i class="fa-solid fa-circle-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 2: ROUND 1 GROUP STAGE MATCHES -->
+        <section id="step-2" class="space-y-6 hidden">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 sm:p-6 rounded-2xl shadow-md border border-slate-100 no-print">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-navy-700">รอบที่ 1: แข่งขันรอบสาย (Group Stage 1)</h2>
+                    <p class="text-xs sm:text-sm text-slate-500">กรอกสกอร์แล้วกดปุ่ม **บันทึกคะแนน** คัดเลือกอันดับ 1-2 ของแต่ละสายไปแบ่งสายใหม่</p>
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="goToStep(1)" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs sm:text-sm transition">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> แก้ไขทีม
+                    </button>
+                    <button onclick="proceedToStage2()" class="flex-1 sm:flex-none px-4 py-2.5 bg-brand-blue hover:bg-blue-700 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
+                        จัดแบ่งสายรอบใหม่ (Stage 2) <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="matches-wrapper" class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6"></div>
+        </section>
+
+        <!-- STEP 3: ROUND 2 STAGE & FINAL 4 -->
+        <section id="step-3" class="space-y-6 hidden">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 sm:p-6 rounded-2xl shadow-md border border-slate-100 no-print">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-navy-700">รอบที่ 2: แบ่งสายใหม่ & รอบ 4 ทีมสุดท้าย</h2>
+                    <p class="text-xs sm:text-sm text-slate-500">แข่งขันในสายรอบสองเพื่อคัดหา 4 ทีมสุดท้ายเข้าสู่รอบรองชนะเลิศและชิงที่ 3</p>
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="goToStep(2)" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs sm:text-sm transition">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> กลับรอบ 1
+                    </button>
+                    <button onclick="processFinalResults()" class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
+                        สรุปผลรางวัลแชมป์ <i class="fa-solid fa-trophy text-yellow-300"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="stage2-qualified-summary" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+
+            <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-bold text-navy-700 mb-4 border-b pb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-sitemap text-brand-blue"></i> แมตช์การแข่งขันรอบที่ 2 (แบ่งกลุ่มใหม่)
+                </h3>
+                <div id="stage2-matches-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6"></div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-bold text-navy-700 mb-4 border-b pb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-yellow-500"></i> รอบรองชนะเลิศ, ชิงชนะเลิศ & ชิงอันดับ 3
+                </h3>
+                <div id="knockout-matches-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"></div>
+            </div>
+        </section>
+
+        <!-- STEP 4: STANDINGS & REPORT -->
+        <section id="step-4" class="hidden">
+            <div class="no-print bg-white p-3 sm:p-4 rounded-2xl shadow-md border border-slate-100 mb-6 flex flex-wrap items-center justify-between gap-3">
+                <button onclick="goToStep(appState.format === 'group' ? 3 : 2)" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs sm:text-sm transition">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> แก้ไขคะแนน
+                </button>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <button onclick="exportToExcel()" class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-file-excel"></i> Excel (.csv)
+                    </button>
+                    <button onclick="window.print()" class="flex-1 sm:flex-none px-4 py-2.5 bg-brand-blue hover:bg-blue-700 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-print"></i> พิมพ์ / PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- PRINT CONTAINER -->
+            <div class="print-container bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-10 shadow-2xl border border-slate-200 space-y-6 sm:space-y-8">
+                <div class="border-b-2 border-navy-700 pb-4 sm:pb-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+                    <div class="flex flex-col sm:flex-row items-center gap-4">
+                        <img src="https://img2.imgbiz.com/imgbiz/-304f5817f4946b337.png" alt="Logo" class="h-16 sm:h-20 w-auto object-contain">
+                        <div>
+                            <h1 class="text-xl sm:text-3xl font-bold text-navy-900">ตารางสรุปผลการแข่งขันหุ่นยนต์ ROBOT MLS</h1>
+                            <p class="text-xs sm:text-sm text-slate-600 mt-1" id="print-tournament-meta">รูปแบบการแข่งขัน: - | วันที่ออกรายงาน: <span id="print-date"></span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="winners-podium" class="bg-gradient-to-r from-blue-900 via-navy-800 to-navy-900 text-white p-5 sm:p-8 rounded-2xl shadow-xl">
+                    <h3 class="text-yellow-400 font-bold text-sm sm:text-base uppercase tracking-wider mb-4 sm:mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-crown text-xl sm:text-2xl"></i> สรุปผลรางวัลการแข่งขันอย่างเป็นทางการ
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-center" id="podium-cards"></div>
+                </div>
+
+                <div id="standings-tables-container" class="space-y-6 sm:space-y-8 overflow-x-auto"></div>
+
+                <div class="pt-10 sm:pt-16 border-t mt-10 sm:mt-16 grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12 text-center text-xs sm:text-sm text-slate-700">
+                    <div>
+                        <p class="mb-10 sm:mb-14">ลงชื่อ..........................................................</p>
+                        <p class="font-bold text-sm sm:text-base">( .......................................................... )</p>
+                        <p class="text-[11px] sm:text-xs text-slate-500 mt-1">กรรมการผู้จัดการแข่งขัน</p>
+                    </div>
+                    <div>
+                        <p class="mb-10 sm:mb-14">ลงชื่อ..........................................................</p>
+                        <p class="font-bold text-sm sm:text-base">( .......................................................... )</p>
+                        <p class="text-[11px] sm:text-xs text-slate-500 mt-1">ประธานฝ่ายจัดการแข่งขัน ROBOT MLS</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- TIMER MODAL / POPUP -->
+    <div id="timer-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden">
+        <div class="bg-navy-900 border-2 border-blue-500/50 text-white rounded-2xl sm:rounded-3xl p-5 sm:p-10 max-w-xl w-full shadow-2xl text-center relative max-h-[95vh] overflow-y-auto">
+            <button onclick="toggleTimerModal()" class="absolute top-3 right-3 sm:top-4 sm:right-4 text-slate-400 hover:text-white text-lg sm:text-xl w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/5 flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="mb-2">
+                <span id="timer-status" class="bg-blue-600/30 text-blue-300 text-[10px] sm:text-xs px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-blue-400/30 font-bold tracking-wide uppercase">READY</span>
+            </div>
+            
+            <h2 class="text-lg sm:text-2xl font-bold text-slate-200 mb-4 sm:mb-6">นาฬิกาจับเวลา & เสียงประกาศสนาม</h2>
+
+            <div class="bg-white/10 p-3 sm:p-4 rounded-xl sm:rounded-2xl mb-4 sm:mb-6 border border-white/10 flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+                <input type="text" id="announcement-input" placeholder="พิมพ์ข้อความที่ต้องการประกาศ" class="w-full sm:flex-grow p-2.5 sm:p-3 rounded-xl bg-black/40 text-white text-xs sm:text-sm border border-white/20 focus:outline-none">
+                <button onclick="speakCustomAnnouncement()" class="w-full sm:w-auto bg-brand-blue hover:bg-blue-600 text-white font-bold px-4 py-2.5 sm:py-3 rounded-xl transition text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-bullhorn"></i> ประกาศเสียง
+                </button>
+            </div>
+
+            <div id="countdown-overlay" class="text-6xl sm:text-8xl font-black text-yellow-400 my-4 sm:my-8 hidden animate-bounce">3</div>
+
+            <div id="clock-display-wrapper" class="my-4 sm:my-6">
+                <div id="clock-display" class="font-mono text-5xl sm:text-9xl font-black text-blue-400 tracking-wider bg-black/40 py-6 sm:py-8 rounded-2xl border border-blue-500/20 shadow-inner">
+                    02:00
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 sm:gap-4 mt-6 sm:mt-8">
+                <button onclick="startMatchTimer()" id="btn-timer-start" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 sm:py-4 px-1 sm:px-2 rounded-xl shadow-lg transition flex flex-col items-center justify-center gap-1 text-xs sm:text-base">
+                    <i class="fa-solid fa-play text-base sm:text-xl"></i>
+                    <span>Start (2m)</span>
+                </button>
+
+                <button onclick="startRepairTimer()" id="btn-timer-repair" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 sm:py-4 px-1 sm:px-2 rounded-xl shadow-lg transition flex flex-col items-center justify-center gap-1 text-xs sm:text-base">
+                    <i class="fa-solid fa-wrench text-base sm:text-xl"></i>
+                    <span>Repair (60s)</span>
+                </button>
+
+                <button onclick="resetMatchTimer()" id="btn-timer-reset" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 sm:py-4 px-1 sm:px-2 rounded-xl shadow-lg transition flex flex-col items-center justify-center gap-1 text-xs sm:text-base">
+                    <i class="fa-solid fa-rotate-right text-base sm:text-xl"></i>
+                    <span>Reset</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-navy-900 text-slate-400 py-4 sm:py-6 text-center text-[11px] sm:text-xs border-t border-navy-700 no-print mt-8 sm:mt-12">
+        <p>© 2026 ROBOT MLS Tournament Management System | Multi-Stage Edition</p>
+    </footer>
+
+    <!-- JS Logic -->
+    <script>
+        let appState = {
+            format: 'group',
+            selectedGroupCount: 2,
+            teamCount: 8,
+            teams: [],
+            groups: {},
+            matches: [],
+            stage2Groups: {},
+            stage2Matches: [],
+            knockoutMatches: []
+        };
+
+        let timerInterval = null;
+        let countdownInterval = null;
+        let remainingSeconds = 120;
+        let audioCtx = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            generateTeamInputs();
+            document.getElementById('print-date').innerText = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+        });
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'th-TH';
+                utterance.rate = 0.95;
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function announceMatchTeams(team1, team2) {
+            const announcement = `ขอเชิญทีม ${team1} และทีม ${team2} พร้อมกันที่สนามแข่งขันครับ`;
+            speakText(announcement);
+        }
+
+        function announceWinnerResult(winnerName, scoreWin, scoreLose) {
+            if (winnerName === 'เสมอ') {
+                speakText(`ผลการแข่งขันคู่นี้เสมอกันด้วยคะแนน ${scoreWin} ต่อ ${scoreLose}`);
+            } else {
+                speakText(`ทีม ${winnerName} เป็นฝ่ายชนะด้วยคะแนน ${scoreWin} ต่อ ${scoreLose}`);
+            }
+        }
+
+        function speakCustomAnnouncement() {
+            const val = document.getElementById('announcement-input').value.trim();
+            if (val) {
+                speakText(val);
+            } else {
+                speakText('ขอเชิญผู้เข้าแข่งขันทุกทีมเตรียมตัวให้พร้อมสำหรับการแข่งขันรอบต่อไปครับ');
+            }
+        }
+
+        function handleCSVImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split(/\r\n|\n/);
+                let importedTeams = [];
+                
+                lines.forEach(line => {
+                    const cleanLine = line.trim();
+                    if (cleanLine) {
+                        const cols = cleanLine.split(/,|\t/);
+                        if (cols[0]) {
+                            importedTeams.push(cols[0].replace(/['"]/g, '').trim());
+                        }
+                    }
+                });
+
+                if (importedTeams.length > 0) {
+                    document.getElementById('team-count').value = importedTeams.length;
+                    generateTeamInputs();
+                    importedTeams.forEach((teamName, idx) => {
+                        const input = document.getElementById(`team-name-${idx + 1}`);
+                        if (input) input.value = teamName;
+                    });
+                    alert(`นำเข้าชื่อทีมสำเร็จ ${importedTeams.length} ทีม!`);
+                } else {
+                    alert('ไม่พบข้อมูลรายชื่อทีมในไฟล์ที่อัปโหลด');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportToExcel() {
+            let csvContent = "\uFEFF"; 
+            csvContent += "ROBOT MLS TOURNAMENT - REPORT\n\n";
+            csvContent += "อันดับ,ชื่อทีม,แข่ง,ชนะ,เสมอ,แพ้,ได้,เสีย,ผลต่าง,คะแนนรวม\n";
+
+            const rows = document.querySelectorAll("#standings-tables-container table tbody tr");
+            rows.forEach(row => {
+                const cols = row.querySelectorAll("td");
+                if (cols.length >= 10) {
+                    const rank = cols[0].innerText.trim();
+                    const name = cols[1].innerText.replace('(ผ่านเข้ารอบ)', '').trim();
+                    const played = cols[2].innerText.trim();
+                    const won = cols[3].innerText.trim();
+                    const drawn = cols[4].innerText.trim();
+                    const lost = cols[5].innerText.trim();
+                    const gf = cols[6].innerText.trim();
+                    const ga = cols[7].innerText.trim();
+                    const gd = cols[8].innerText.trim();
+                    const pts = cols[9].innerText.trim();
+                    csvContent += `${rank},"${name}",${played},${won},${drawn},${lost},${gf},${ga},${gd},${pts}\n`;
+                }
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Robot_MLS_Standings_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function playBeep(freq = 600, duration = 150) {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration / 1000);
+            } catch(e) {}
+        }
+
+        function toggleTimerModal() {
+            document.getElementById('timer-modal').classList.toggle('hidden');
+        }
+
+        function updateClockDisplay() {
+            const mins = Math.floor(remainingSeconds / 60);
+            const secs = remainingSeconds % 60;
+            document.getElementById('clock-display').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function startMatchTimer() {
+            clearInterval(timerInterval);
+            clearInterval(countdownInterval);
+
+            const overlay = document.getElementById('countdown-overlay');
+            const clockWrapper = document.getElementById('clock-display-wrapper');
+            const statusLabel = document.getElementById('timer-status');
+
+            remainingSeconds = 120;
+            updateClockDisplay();
+
+            statusLabel.innerText = "COUNTDOWN";
+            statusLabel.className = "bg-amber-600/30 text-amber-300 text-[10px] sm:text-xs px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-amber-400/30 font-bold tracking-wide uppercase";
+
+            clockWrapper.classList.add('hidden');
+            overlay.classList.remove('hidden');
+
+            let count = 3;
+            overlay.innerText = count;
+            playBeep(800, 200);
+            speakText(String(count));
+
+            countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    overlay.innerText = count;
+                    playBeep(800, 200);
+                    speakText(String(count));
+                } else if (count === 0) {
+                    overlay.innerText = "GO!";
+                    playBeep(1200, 400);
+                    speakText("เริ่มการแข่งขัน");
+                } else {
+                    clearInterval(countdownInterval);
+                    overlay.classList.add('hidden');
+                    clockWrapper.classList.remove('hidden');
+                    
+                    statusLabel.innerText = "MATCH IN PROGRESS";
+                    statusLabel.className = "bg-emerald-600/30 text-emerald-300 text-[10px] sm:text-xs px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-emerald-400/30 font-bold tracking-wide uppercase";
+                    
+                    runTimer();
+                }
+            }, 1000);
+        }
+
+        function startRepairTimer() {
+            clearInterval(timerInterval);
+            clearInterval(countdownInterval);
+
+            document.getElementById('countdown-overlay').classList.add('hidden');
+            document.getElementById('clock-display-wrapper').classList.remove('hidden');
+
+            const statusLabel = document.getElementById('timer-status');
+            statusLabel.innerText = "REPAIR TIME (60s)";
+            statusLabel.className = "bg-amber-600/30 text-amber-300 text-[10px] sm:text-xs px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-amber-400/30 font-bold tracking-wide uppercase";
+
+            remainingSeconds = 60;
+            updateClockDisplay();
+            playBeep(1000, 300);
+            speakText("เริ่มเวลาซ่อมแซม 60 วินาที");
+            runTimer();
+        }
+
+        function runTimer() {
+            timerInterval = setInterval(() => {
+                if (remainingSeconds > 0) {
+                    remainingSeconds--;
+                    updateClockDisplay();
+                    if (remainingSeconds === 10) {
+                        speakText("เหลือเวลา 10วินาทีสุดท้าย");
+                    }
+                    if (remainingSeconds <= 5 && remainingSeconds > 0) {
+                        playBeep(700, 150);
+                        speakText(String(remainingSeconds));
+                    }
+                } else {
+                    clearInterval(timerInterval);
+                    playBeep(400, 800);
+                    speakText("หมดเวลาการแข่งขันครับ");
+                    const statusLabel = document.getElementById('timer-status');
+                    statusLabel.innerText = "TIME OUT!";
+                    statusLabel.className = "bg-red-600/30 text-red-300 text-[10px] sm:text-xs px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-red-400/30 font-bold tracking-wide uppercase animate-pulse";
+                }
+            }, 1000);
+        }
+
+        function resetMatchTimer() {
+            clearInterval(timerInterval);
+            clearInterval(countdownInterval);
+
+            remainingSeconds = 120;
+            updateClockDisplay();
+
+            document.getElementById('countdown-overlay').classList.add('hidden');
+            document.getElementById('clock-display-wrapper').classList.remove('hidden');
+
+            const statusLabel = document.getElementById('timer-status');
+            statusLabel.innerText = "READY";
+            statusLabel.className = "bg-blue-600/30 text-blue-300 text-[10px] sm:text-xs px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-blue-400/30 font-bold tracking-wide uppercase";
+        }
+
+        function toggleFormatOptions() {
+            const format = document.querySelector('input[name="format"]:checked').value;
+            appState.format = format;
+            document.getElementById('group-stage-options').classList.toggle('hidden', format !== 'group');
+        }
+
+        function setGroupCount(count) {
+            appState.selectedGroupCount = count;
+            document.querySelectorAll('.group-cnt-btn').forEach(btn => {
+                btn.className = "group-cnt-btn py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold border transition text-center bg-white text-slate-700 border-slate-300 hover:bg-slate-50 text-xs sm:text-sm";
+            });
+            document.getElementById(`btn-group-${count}`).className = "group-cnt-btn py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold border transition text-center bg-brand-blue text-white border-brand-blue shadow text-xs sm:text-sm";
+        }
+
+        function generateTeamInputs() {
+            let count = parseInt(document.getElementById('team-count').value) || 4;
+            if (count < 4) count = 4;
+            if (count > 64) count = 64;
+            document.getElementById('team-count').value = count;
+            appState.teamCount = count;
+
+            const grid = document.getElementById('team-inputs-grid');
+            grid.innerHTML = '';
+            for (let i = 1; i <= count; i++) {
+                grid.innerHTML += `
+                    <div class="flex items-center gap-2 sm:gap-3 bg-white p-2 sm:p-2.5 rounded-xl border border-slate-200 shadow-sm focus-within:border-brand-blue focus-within:ring-1 focus-within:ring-brand-blue transition">
+                        <span class="w-7 sm:w-8 text-center font-bold text-xs sm:text-sm text-slate-400">#${i}</span>
+                        <input type="text" id="team-name-${i}" value="" placeholder="กรอกชื่อทีมที่ ${i}" class="team-name-input flex-grow p-1 border-0 bg-transparent text-xs sm:text-sm font-semibold focus:outline-none">
+                    </div>`;
+            }
+            document.getElementById('team-inputs-container').classList.remove('hidden');
+        }
+
+        function goToStep(step) {
+            [1, 2, 3, 4].forEach(s => document.getElementById(`step-${s}`).classList.add('hidden'));
+            document.getElementById(`step-${step}`).classList.remove('hidden');
+
+            const lineProgress = document.getElementById('line-progress');
+            lineProgress.style.width = ((step - 1) / 3 * 100) + '%';
+
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`step-btn-${i}`);
+                if (i < step) {
+                    btn.className = "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-lg shadow-md transition-all step-done";
+                    btn.innerHTML = `<i class="fa-solid fa-check text-xs sm:text-sm"></i>`;
+                } else if (i === step) {
+                    btn.className = "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-lg shadow-md transition-all step-active";
+                    btn.innerText = i;
+                } else {
+                    btn.className = "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-lg shadow-md transition-all step-inactive";
+                    btn.innerText = i;
+                }
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function startTournament() {
+            const inputs = document.querySelectorAll('.team-name-input');
+            let teams = [];
+            inputs.forEach((inp, idx) => teams.push(inp.value.trim() || `ทีมที่ ${idx + 1}`));
+            appState.teams = teams;
+            appState.matches = [];
+            appState.groups = {};
+
+            const wrapper = document.getElementById('matches-wrapper');
+            wrapper.innerHTML = '';
+
+            if (appState.format === 'group') {
+                const groupNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+                const numGroups = Math.min(appState.selectedGroupCount, teams.length);
+                let shuffled = [...teams].sort(() => 0.5 - Math.random());
+                for (let i = 0; i < numGroups; i++) appState.groups[groupNames[i]] = [];
+                shuffled.forEach((t, i) => appState.groups[groupNames[i % numGroups]].push(t));
+
+                let matchId = 1;
+                Object.keys(appState.groups).forEach(gName => {
+                    const gTeams = appState.groups[gName];
+                    const gMatches = generateRoundRobinMatches(gTeams, gName);
+                    let html = `<div class="bg-white rounded-2xl shadow-md border border-slate-200 p-4 sm:p-6">
+                        <div class="font-bold text-navy-700 mb-3 sm:mb-4 text-base sm:text-lg border-b pb-2 sm:pb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1">
+                            <span><i class="fa-solid fa-layer-group text-brand-blue mr-2"></i> รอบที่ 1 สาย ${gName}</span>
+                            <span class="text-[11px] sm:text-xs bg-blue-100 text-brand-blue px-2.5 py-0.5 sm:py-1 rounded-full font-semibold">ทีม: ${gTeams.join(', ')}</span>
+                        </div>
+                        <div class="space-y-3 sm:space-y-4">`;
+                    gMatches.forEach(m => {
+                        m.id = matchId++;
+                        appState.matches.push(m);
+                        html += renderMatchCard(m, 't');
+                    });
+                    html += `</div></div>`;
+                    wrapper.innerHTML += html;
+                });
+            } else {
+                const allMatches = generateRoundRobinMatches(teams, 'หลัก');
+                let html = `<div class="bg-white rounded-2xl shadow-md border border-slate-200 p-4 sm:p-6 col-span-2"><div class="space-y-3 sm:space-y-4">`;
+                allMatches.forEach((m, idx) => {
+                    m.id = idx + 1;
+                    appState.matches.push(m);
+                    html += renderMatchCard(m, 't');
+                });
+                html += `</div></div>`;
+                wrapper.innerHTML = html;
+            }
+            goToStep(2);
+        }
+
+        function generateRoundRobinMatches(list, groupName) {
+            let m = [];
+            for (let i = 0; i < list.length; i++) {
+                for (let j = i + 1; j < list.length; j++) {
+                    m.push({ id: null, group: groupName, team1: list[i], team2: list[j], score1: '', score2: '' });
+                }
+            }
+            return m;
+        }
+
+        function renderMatchCard(m, prefix) {
+            return `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 shadow-sm hover:border-blue-300 transition space-y-2 sm:space-y-3">
+                    <div class="flex items-center justify-between gap-1 sm:gap-2">
+                        <div id="label-${prefix}1-${m.id}" class="w-[32%] text-right font-bold text-xs sm:text-base text-navy-900 truncate">${m.team1}</div>
+                        
+                        <div class="flex items-center gap-1 sm:gap-2">
+                            <input type="number" min="0" max="99" id="score-${prefix}1-${m.id}" value="${m.score1}" onchange="updateScoreObj(${m.id}, '${prefix}')" class="w-12 h-10 sm:w-14 sm:h-12 text-center font-extrabold text-lg sm:text-xl border-2 rounded-xl bg-white focus:border-brand-blue focus:outline-none shadow-inner">
+                            
+                            <button onclick="announceMatchTeams(document.getElementById('label-${prefix}1-${m.id}').innerText, document.getElementById('label-${prefix}2-${m.id}').innerText)" title="กดประกาศเรียกทีม" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-blue-100 hover:bg-brand-blue hover:text-white text-brand-blue font-bold flex items-center justify-center transition shadow-sm border border-blue-200 shrink-0">
+                                <i class="fa-solid fa-bullhorn text-xs sm:text-sm"></i>
+                            </button>
+
+                            <input type="number" min="0" max="99" id="score-${prefix}2-${m.id}" value="${m.score2}" onchange="updateScoreObj(${m.id}, '${prefix}')" class="w-12 h-10 sm:w-14 sm:h-12 text-center font-extrabold text-lg sm:text-xl border-2 rounded-xl bg-white focus:border-brand-blue focus:outline-none shadow-inner">
+                        </div>
+
+                        <div id="label-${prefix}2-${m.id}" class="w-[32%] text-left font-bold text-xs sm:text-base text-navy-900 truncate">${m.team2}</div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-200 text-[11px] sm:text-xs">
+                        <button onclick="saveMatchResult(${m.id}, '${prefix}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2.5 sm:px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1">
+                            <i class="fa-solid fa-floppy-disk"></i> บันทึก
+                        </button>
+                        <span id="winner-badge-${prefix}-${m.id}" class="font-bold text-slate-500 italic truncate max-w-[180px] sm:max-w-none">ยังไม่บันทึกผล</span>
+                    </div>
+                </div>`;
+        }
+
+        function updateScoreObj(id, prefix) {
+            let list = prefix === 't' ? appState.matches : (prefix === 's2' ? appState.stage2Matches : appState.knockoutMatches);
+            const m = list.find(x => x.id === id);
+            if (m) {
+                m.score1 = document.getElementById(`score-${prefix}1-${id}`).value;
+                m.score2 = document.getElementById(`score-${prefix}2-${id}`).value;
+            }
+        }
+
+        function saveMatchResult(id, prefix) {
+            const s1Val = document.getElementById(`score-${prefix}1-${id}`).value;
+            const s2Val = document.getElementById(`score-${prefix}2-${id}`).value;
+            const t1Name = document.getElementById(`label-${prefix}1-${id}`).innerText;
+            const t2Name = document.getElementById(`label-${prefix}2-${id}`).innerText;
+            const badge = document.getElementById(`winner-badge-${prefix}-${id}`);
+
+            if (s1Val === '' || s2Val === '') {
+                alert('กรุณากรอกคะแนนให้ครบทั้งสองทีมก่อนบันทึก');
+                return;
+            }
+
+            const s1 = parseInt(s1Val);
+            const s2 = parseInt(s2Val);
+
+            if (s1 > s2) {
+                badge.className = "font-bold text-emerald-600 truncate";
+                badge.innerHTML = `<i class="fa-solid fa-crown text-yellow-500"></i> ชนะ: <span class="underline">${t1Name}</span> (${s1}-${s2})`;
+                announceWinnerResult(t1Name, s1, s2);
+            } else if (s2 > s1) {
+                badge.className = "font-bold text-emerald-600 truncate";
+                badge.innerHTML = `<i class="fa-solid fa-crown text-yellow-500"></i> ชนะ: <span class="underline">${t2Name}</span> (${s2}-${s1})`;
+                announceWinnerResult(t2Name, s2, s1);
+            } else {
+                badge.className = "font-bold text-amber-600 truncate";
+                badge.innerHTML = `<i class="fa-solid fa-handshake"></i> ผล: <span class="underline">เสมอ</span> (${s1}-${s2})`;
+                announceWinnerResult('เสมอ', s1, s2);
+            }
+
+            updateScoreObj(id, prefix);
+            if (prefix === 's2') {
+                updateStage2KnockoutProgression();
+            } else if (prefix === 'ko') {
+                updateKnockoutProgression();
+            }
+        }
+
+        function proceedToStage2() {
+            if (appState.format === 'roundrobin') {
+                processFinalResults();
+                return;
+            }
+
+            let qualifiedTeams = [];
+            Object.keys(appState.groups).forEach(gName => {
+                const gTeams = appState.groups[gName];
+                const gMatches = appState.matches.filter(m => m.group === gName);
+                const table = calculateStandings(gTeams, gMatches);
+
+                if (table[0]) qualifiedTeams.push({ name: table[0].name, source: `1${gName}` });
+                if (table[1]) qualifiedTeams.push({ name: table[1].name, source: `2${gName}` });
+            });
+
+            // แบ่งสายใหม่รอบ 2 เป็น 2 สาย (Group X และ Group Y)
+            let shuffled = [...qualifiedTeams].sort(() => 0.5 - Math.random());
+            appState.stage2Groups = { 'X': [], 'Y': [] };
+            shuffled.forEach((t, i) => {
+                let gKey = i % 2 === 0 ? 'X' : 'Y';
+                appState.stage2Groups[gKey].push(t.name);
+            });
+
+            const summaryBox = document.getElementById('stage2-qualified-summary');
+            summaryBox.innerHTML = '';
+            Object.keys(appState.stage2Groups).forEach(k => {
+                summaryBox.innerHTML += `
+                    <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl shadow-sm">
+                        <div class="font-bold text-brand-blue mb-1 text-sm">สายรอบใหม่กลุ่ม ${k}</div>
+                        <div class="text-xs text-slate-700 font-semibold">${appState.stage2Groups[k].join(', ')}</div>
+                    </div>`;
+            });
+
+            appState.stage2Matches = [];
+            let matchId = 100;
+            Object.keys(appState.stage2Groups).forEach(gName => {
+                const gTeams = appState.stage2Groups[gName];
+                const gMatches = generateRoundRobinMatches(gTeams, gName);
+                gMatches.forEach(m => {
+                    m.id = matchId++;
+                    appState.stage2Matches.push(m);
+                });
+            });
+
+            const s2Grid = document.getElementById('stage2-matches-grid');
+            s2Grid.innerHTML = '';
+            Object.keys(appState.stage2Groups).forEach(gName => {
+                let html = `<div class="border rounded-xl p-4 bg-slate-50 space-y-3"><div class="font-bold text-navy-700 text-sm border-b pb-2">กลุ่มรอบสอง ${gName}</div>`;
+                appState.stage2Matches.filter(m => m.group === gName).forEach(m => {
+                    html += renderMatchCard(m, 's2');
+                });
+                html += `</div>`;
+                s2Grid.innerHTML += html;
+            });
+
+            // เตรียมรอบรองชนะเลิศและชิงที่ 3, 1 รอไว้
+            appState.knockoutMatches = [
+                { id: 201, title: "รอบรองชนะเลิศ คู่ 1 (1X vs 2Y)", team1: "อันดับ 1 กลุ่ม X", team2: "อันดับ 2 กลุ่ม Y", score1: '', score2: '' },
+                { id: 202, title: "รอบรองชนะเลิศ คู่ 2 (1Y vs 2X)", team1: "อันดับ 1 กลุ่ม Y", team2: "อันดับ 2 กลุ่ม X", score1: '', score2: '' },
+                { id: 203, title: "🏆 รอบชิงชนะเลิศ (ชิงอันดับ 1)", team1: "ผู้ชนะคู่ที่ 1", team2: "ผู้ชนะคู่ที่ 2", score1: '', score2: '' },
+                { id: 204, title: "🥉 รอบชิงอันดับ 3", team1: "ผู้แพ้คู่ที่ 1", team2: "ผู้แพ้คู่ที่ 2", score1: '', score2: '' }
+            ];
+
+            const koGrid = document.getElementById('knockout-matches-grid');
+            koGrid.innerHTML = '';
+            appState.knockoutMatches.forEach(m => {
+                koGrid.innerHTML += `
+                    <div class="border rounded-xl p-4 bg-slate-50 shadow-sm">
+                        <div class="text-xs sm:text-sm font-bold text-brand-blue mb-3 flex items-center justify-between">
+                            <span>${m.title}</span>
+                            <span class="text-slate-400 font-normal text-[10px] bg-white px-2 py-0.5 rounded border">Knockout</span>
+                        </div>
+                        ${renderMatchCard(m, 'ko')}
+                    </div>`;
+            });
+
+            goToStep(3);
+        }
+
+        function updateStage2KnockoutProgression() {
+            const tableX = calculateStandings(appState.stage2Groups['X'], appState.stage2Matches.filter(m => m.group === 'X'));
+            const tableY = calculateStandings(appState.stage2Groups['Y'], appState.stage2Matches.filter(m => m.group === 'Y'));
+
+            const x1 = tableX[0] ? tableX[0].name : "1X";
+            const x2 = tableX[1] ? tableX[1].name : "2X";
+            const y1 = tableY[0] ? tableY[0].name : "1Y";
+            const y2 = tableY[1] ? tableY[1].name : "2Y";
+
+            const m1 = appState.knockoutMatches.find(x => x.id === 201);
+            const m2 = appState.knockoutMatches.find(x => x.id === 202);
+
+            if (m1) {
+                m1.team1 = x1;
+                m1.team2 = y2;
+                document.getElementById('label-ko1-201').innerText = x1;
+                document.getElementById('label-ko2-201').innerText = y2;
+            }
+            if (m2) {
+                m2.team1 = y1;
+                m2.team2 = x2;
+                document.getElementById('label-ko1-202').innerText = y1;
+                document.getElementById('label-ko2-202').innerText = x2;
+            }
+            updateKnockoutProgression();
+        }
+
+        function updateKnockoutProgression() {
+            const m1 = appState.knockoutMatches.find(x => x.id === 201);
+            const m2 = appState.knockoutMatches.find(x => x.id === 202);
+            const finalMatch = appState.knockoutMatches.find(x => x.id === 203);
+            const thirdMatch = appState.knockoutMatches.find(x => x.id === 204);
+
+            if (m1 && m1.score1 !== '' && m1.score2 !== '') {
+                const s1 = parseInt(m1.score1), s2 = parseInt(m1.score2);
+                let win1 = s1 > s2 ? m1.team1 : (s2 > s1 ? m1.team2 : null);
+                let lose1 = s1 > s2 ? m1.team2 : (s2 > s1 ? m1.team1 : null);
+                if (win1 && finalMatch) { finalMatch.team1 = win1; document.getElementById('label-ko1-203').innerText = win1; }
+                if (lose1 && thirdMatch) { thirdMatch.team1 = lose1; document.getElementById('label-ko1-204').innerText = lose1; }
+            }
+
+            if (m2 && m2.score1 !== '' && m2.score2 !== '') {
+                const s1 = parseInt(m2.score1), s2 = parseInt(m2.score2);
+                let win2 = s1 > s2 ? m2.team1 : (s2 > s1 ? m2.team2 : null);
+                let lose2 = s1 > s2 ? m2.team2 : (s2 > s1 ? m2.team1 : null);
+                if (win2 && finalMatch) { finalMatch.team2 = win2; document.getElementById('label-ko2-203').innerText = win2; }
+                if (lose2 && thirdMatch) { thirdMatch.team2 = lose2; document.getElementById('label-ko2-204').innerText = lose2; }
+            }
+        }
+
+        function processFinalResults() {
+            document.getElementById('print-tournament-meta').innerText = `รูปแบบ: แข่ง 2 รอบ (แบ่งสายรอบแรก -> แบ่งสายรอบสอง -> 4 ทีมสุดท้าย)`;
+
+            const standingsContainer = document.getElementById('standings-tables-container');
+            const podiumCards = document.getElementById('podium-cards');
+            standingsContainer.innerHTML = '';
+
+            let champion = '-', runnerUp = '-', third = '-';
+
+            if (appState.format === 'group') {
+                Object.keys(appState.groups).forEach(gName => {
+                    const table = calculateStandings(appState.groups[gName], appState.matches.filter(m => m.group === gName));
+                    standingsContainer.innerHTML += renderStandingsTable(`รอบที่ 1: ตารางคะแนนกลุ่ม ${gName}`, table);
+                });
+
+                Object.keys(appState.stage2Groups).forEach(gName => {
+                    const table = calculateStandings(appState.stage2Groups[gName], appState.stage2Matches.filter(m => m.group === gName));
+                    standingsContainer.innerHTML += renderStandingsTable(`รอบที่ 2: ตารางคะแนนกลุ่ม ${gName}`, table);
+                });
+
+                const finalMatch = appState.knockoutMatches.find(m => m.id === 203);
+                if (finalMatch && finalMatch.score1 !== '' && finalMatch.score2 !== '') {
+                    const s1 = parseInt(finalMatch.score1), s2 = parseInt(finalMatch.score2);
+                    if (s1 > s2) { champion = finalMatch.team1; runnerUp = finalMatch.team2; }
+                    else if (s2 > s1) { champion = finalMatch.team2; runnerUp = finalMatch.team1; }
+                }
+
+                const thirdMatch = appState.knockoutMatches.find(m => m.id === 204);
+                if (thirdMatch && thirdMatch.score1 !== '' && thirdMatch.score2 !== '') {
+                    const s1 = parseInt(thirdMatch.score1), s2 = parseInt(thirdMatch.score2);
+                    if (s1 > s2) { third = thirdMatch.team1; }
+                    else if (s2 > s1) { third = thirdMatch.team2; }
+                }
+            } else {
+                const fullTable = calculateStandings(appState.teams, appState.matches);
+                standingsContainer.innerHTML = renderStandingsTable('ตารางสรุปคะแนนรวมทั้งหมด', fullTable);
+                champion = fullTable[0] ? fullTable[0].name : '-';
+                runnerUp = fullTable[1] ? fullTable[1].name : '-';
+                third = fullTable[2] ? fullTable[2].name : '-';
+            }
+
+            podiumCards.innerHTML = `
+                <div class="bg-white/10 p-4 rounded-xl border border-white/20">
+                    <div class="text-yellow-400 font-bold text-xs sm:text-sm uppercase mb-1">🥇 ชนะเลิศ (อันดับ 1)</div>
+                    <div class="text-lg sm:text-2xl font-black text-white truncate">${champion}</div>
+                </div>
+                <div class="bg-white/10 p-4 rounded-xl border border-white/20">
+                    <div class="text-slate-300 font-bold text-xs sm:text-sm uppercase mb-1">🥈 รองชนะเลิศ อันดับ 1</div>
+                    <div class="text-lg sm:text-2xl font-bold text-white truncate">${runnerUp}</div>
+                </div>
+                <div class="bg-white/10 p-4 rounded-xl border border-white/20">
+                    <div class="text-amber-400 font-bold text-xs sm:text-sm uppercase mb-1">🥉 รองชนะเลิศ อันดับ 2</div>
+                    <div class="text-lg sm:text-2xl font-bold text-white truncate">${third}</div>
+                </div>`;
+
+            goToStep(4);
+        }
+
+        function calculateStandings(teams, matches) {
+            let stats = {};
+            teams.forEach(t => stats[t] = { name: t, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, gd: 0, points: 0 });
+
+            matches.forEach(m => {
+                if (m.score1 !== '' && m.score2 !== '') {
+                    const s1 = parseInt(m.score1), s2 = parseInt(m.score2);
+                    const t1 = stats[m.team1], t2 = stats[m.team2];
+                    if (t1 && t2) {
+                        t1.played++; t2.played++;
+                        t1.gf += s1; t1.ga += s2;
+                        t2.gf += s2; t2.ga += s1;
+                        if (s1 > s2) { t1.won++; t1.points += 3; t2.lost++; }
+                        else if (s2 > s1) { t2.won++; t2.points += 3; t1.lost++; }
+                        else { t1.drawn++; t1.points += 1; t2.drawn++; t2.points += 1; }
+                    }
+                }
+            });
+
+            Object.keys(stats).forEach(k => stats[k].gd = stats[k].gf - stats[k].ga);
+            return Object.values(stats).sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
+        }
+
+        function renderStandingsTable(title, tableData) {
+            let rows = tableData.map((t, idx) => `
+                <tr class="${idx < 2 ? 'bg-blue-50/60 font-semibold' : ''} border-b border-slate-100 text-slate-700 text-xs sm:text-sm">
+                    <td class="py-3 px-2 sm:px-4 text-center font-bold">${idx + 1}</td>
+                    <td class="py-3 px-2 sm:px-4 font-bold text-navy-900 truncate max-w-[120px] sm:max-w-none">${t.name} ${idx < 2 ? '<span class="text-[10px] text-brand-blue font-normal hidden sm:inline">(ผ่านเข้ารอบ)</span>' : ''}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center">${t.played}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center text-emerald-600">${t.won}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center text-slate-500">${t.drawn}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center text-red-500">${t.lost}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center">${t.gf}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center">${t.ga}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center">${t.gd > 0 ? '+' + t.gd : t.gd}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center font-extrabold text-brand-blue bg-blue-50/80">${t.points}</td>
+                </tr>`).join('');
+
+            return `
+                <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-md mb-6">
+                    <div class="bg-navy-700 text-white px-4 sm:px-6 py-3 font-bold text-sm sm:text-lg flex justify-between items-center">
+                        <span>${title}</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs sm:text-sm whitespace-nowrap">
+                            <thead class="bg-slate-100 text-slate-600 font-bold border-b">
+                                <tr>
+                                    <th class="py-3 px-2 sm:px-4 text-center w-12">อันดับ</th>
+                                    <th class="py-3 px-2 sm:px-4">ชื่อทีม</th>
+                                    <th class="py-3 px-2 sm:px-4 text-center">แข่ง</th>
+                                    <th class="py-3 px-2 sm:px-4 text-center">ชนะ</th>
+                                    <th class="py-3 px-2 sm:px-4 text-center">เสมอ</th>
+                                    <th class="py-3 px-2 sm:px-4 text-center">แพ้</th>
+                                    <th class="py-3 px-2 sm:px-4 text-center">ได้</th>
+                                    <th class="py-3 px-2 sm:px-4 text-center">เสีย</th>
+                                    <th class="py-3 px-2 sm:px-4 text-center">+/-</th>
+                                    <th class="py-3 px-2 sm:px-4 text-center bg-blue-100 text-navy-900">แต้ม</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+        }
+
+        function resetApp() {
+            if (confirm("เริ่มต้นระบบใหม่ทั้งหมดใช่หรือไม่?")) window.location.reload();
+        }
+    </script>
+</body>
+</html>
